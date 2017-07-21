@@ -11,6 +11,7 @@ m <- llvm_load_module "aes.bc";
 // From here we extract a symbolic version of the code, "bitblast" it and the
 // reference into a circuit representation, then prove these two circuits are
 // equivalent.
+
 k  <- fresh_symbolic "k" {| [32][8] |};
 pt <- fresh_symbolic "pt" {| [16][8] |};
 aes1 <- llvm_symexec m "encrypt_aes_256"
@@ -19,9 +20,9 @@ aes1 <- llvm_symexec m "encrypt_aes_256"
             , ("plaintext", 16) ]
             [ ("*key", {{ k }} , 32)
             , ("*plaintext", {{ pt }}, 16) ]
-            [ ("ciphertext", 16) ]
+            [ ("*ciphertext", 16) ]
             false;
-let {{ aes2 x = aesEncrypt (pt,key) where [pt,key] = split x }};
+let {{ aes2 x = aesEncrypt (take x ,drop x) }};
 aig1 <- bitblast aes1;
 aig2 <- bitblast aes2;
 cec aig1 aig2;
