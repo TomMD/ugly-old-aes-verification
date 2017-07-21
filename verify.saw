@@ -23,6 +23,11 @@ aes1 <- llvm_symexec m "encrypt_aes_256"
             [ ("*ciphertext", 16) ]
             false;
 let {{ aes2 x = aesEncrypt (take x ,drop x) }};
+print "Bit blasting C code";
 aig1 <- bitblast aes1;
-aig2 <- bitblast aes2;
-cec aig1 aig2;
+print "Bit blasting Cryptol code";
+aig2 <- bitblast {{ aes2 : [384] -> [128] }};
+print "cec";
+res <- cec aig1 aig2;
+print "Done with CEC";
+print res;
