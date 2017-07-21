@@ -1,0 +1,27 @@
+import "AES.cry";
+// A reference implementation we'll take as correct.
+// It helps that this ref:
+//   1. Is in a high level langauge that is mostly mathematical
+//   2. Has been proven equivalent to OpenSSL and other AES implementations
+
+m <- llvm_load_module "aes.bc";
+// The bitcode produced by clang -emit-llvm on the provided 
+// AES C code.
+
+// From here we extract a symbolic version of the code, "bitblast" it and the
+// reference into a circuit representation, then prove these two circuits are
+// equivalent.
+k  <- fresh_symbolic "k" {| [32][8] |};
+pt <- fresh_symbolic "pt" {| [16][8] |};
+aes1 <- llvm_symexec m "encrypt_aes_256"
+            [ ("ciphertext", 16)
+            , ("key", 32)
+            , ("plaintext", 16) ]
+            [ ("*key", {{ k }} , 32)
+            , ("*plaintext", {{ pt }}, 16) ]
+            [ ("ciphertext", 16) ]
+            false;
+let {{ aes2 x = aesEncrypt (pt,key) where [pt,key] = split x }};
+aig1 <- bitblast aes1;
+aig2 <- bitblast aes2;
+cec aig1 aig2;
